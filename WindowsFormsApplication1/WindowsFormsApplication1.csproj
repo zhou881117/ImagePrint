@@ -46,9 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Const.cs" />
-    <Compile Include="CoolPrintPreviewControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="CoolPrintPreviewControl.cs" />
     <Compile Include="CoolPrintPreviewDialog.cs">
       <SubType>Form</SubType>
     </Compile>

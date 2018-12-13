@@ -19,7 +19,7 @@ namespace WindowsFormsApplication1
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Bitmap bitmap = Bitmap.FromFile(@"F:\ImageChroma\ImageChroma\Backgroud\1.jpg") as Bitmap;
+            Bitmap bitmap = Bitmap.FromFile(@"F:\ImageChroma\ImageChroma\bin\Debug\Compose\合成_20181210_203504_1.jpg") as Bitmap;
             ImagePrintHelper imagePrintHelper = new ImagePrintHelper(bitmap);
             imagePrintHelper.PrintPreview();
         }

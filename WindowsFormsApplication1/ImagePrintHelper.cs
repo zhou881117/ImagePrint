@@ -21,20 +21,25 @@ namespace WindowsFormsApplication1
         /// <summary>
         /// 将在页面上居中打印输出。
         /// </summary>
-        public bool AllowPrintCenter = true;
+        public bool AllowPrintCenter { get; set; } = true;
 
         /// <summary>
         /// 旋转图像，如果它符合页面更好
         /// </summary>
-        public bool AllowPrintRotate = true;
+        public bool AllowPrintRotate { get; set; } = true;
         /// <summary>
         /// 缩放图像，以更好地适应页面
         /// </summary>
-        public bool AllowPrintEnlarge = true;
+        public bool AllowPrintEnlarge { get; set; } = true;
         /// <summary>
         /// 允许打印收缩，以更好适应页面
         /// </summary>
-        public bool AllowPrintShrink = true;
+        public bool AllowPrintShrink { get; set; } = true;
+
+        /// <summary>
+        /// 填充
+        /// </summary>
+        public bool Fill { get; set; } = true;
         #endregion
 
         /// <summary>
@@ -51,7 +56,7 @@ namespace WindowsFormsApplication1
         /// </summary>
         /// <param name="image">待打印的图片对象</param>
         /// <param name="documentname">文档名称</param>
-        public ImagePrintHelper(Image image, string documentname) 
+        public ImagePrintHelper(Image image, string documentname)
         {
             this.image = (Image)image.Clone();
             printDialog.UseEXDialog = true;
@@ -90,6 +95,8 @@ namespace WindowsFormsApplication1
             }
         }
 
+        private bool rotated = false;
+
         private void GetImageForPrint(object sender, PrintPageEventArgs e)
         {
             ContentAlignment alignment = this.AllowPrintCenter ? ContentAlignment.MiddleCenter : ContentAlignment.TopLeft;
@@ -100,28 +107,76 @@ namespace WindowsFormsApplication1
             // rotate the image if it fits the page better
             if (this.AllowPrintRotate)
             {
-                if ((pageRect.Width > pageRect.Height && imageRect.Width < imageRect.Height) ||
-                   (pageRect.Width < pageRect.Height && imageRect.Width > imageRect.Height))
+                if (e.PageSettings.Landscape)
                 {
-                    image.RotateFlip(RotateFlipType.Rotate90FlipNone);
-                    imageRect = image.GetBounds(ref gu);
-                    if (alignment.Equals(ContentAlignment.TopLeft)) alignment = ContentAlignment.TopRight;
+                    if ((pageRect.Width < pageRect.Height && imageRect.Width < imageRect.Height) ||
+                       (pageRect.Width > pageRect.Height && imageRect.Width > imageRect.Height))
+                    {
+                        if (!rotated)
+                        {
+                            image.RotateFlip(RotateFlipType.Rotate90FlipNone);
+                            rotated = true;
+                        }
+                        else
+                        {
+                            image.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                            rotated = false;
+                        }
+                        imageRect = image.GetBounds(ref gu);
+                        if (alignment.Equals(ContentAlignment.TopLeft)) alignment = ContentAlignment.TopRight;
+                    }
+                }
+                else
+                {
+                    if ((pageRect.Width > pageRect.Height && imageRect.Width < imageRect.Height) ||
+                       (pageRect.Width < pageRect.Height && imageRect.Width > imageRect.Height))
+                    {
+                        if (!rotated)
+                        {
+                            image.RotateFlip(RotateFlipType.Rotate90FlipNone);
+                            rotated = true;
+                        }
+                        else
+                        {
+                            image.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                            rotated = false;
+                        }
+                        imageRect = image.GetBounds(ref gu);
+                        if (alignment.Equals(ContentAlignment.TopLeft)) alignment = ContentAlignment.TopRight;
+                    }
                 }
             }
             RectangleF printRect = new RectangleF(0, 0, imageRect.Width, imageRect.Height); ;
             // scale the image to fit the page better
             if (this.AllowPrintEnlarge || this.AllowPrintShrink)
             {
-                SizeF resizedRect = ScaleHelper.GetScaledSize(imageRect.Size, pageRect.Size, false);
+                SizeF resizedRect = new SizeF();
+                if (e.PageSettings.Landscape)
+                {
+                    SizeF size = new SizeF(pageRect.Size.Height, pageRect.Size.Width);
+                    resizedRect = ScaleHelper.GetScaledSize(imageRect.Size, size, Fill);
+                }
+                else
+                {
+                    resizedRect = ScaleHelper.GetScaledSize(imageRect.Size, pageRect.Size, Fill);
+                }
+
                 if ((this.AllowPrintShrink && resizedRect.Width < printRect.Width) ||
                    this.AllowPrintEnlarge && resizedRect.Width > printRect.Width)
                 {
                     printRect.Size = resizedRect;
                 }
             }
-
-            // align the image
-            printRect = ScaleHelper.GetAlignedRectangle(printRect, new RectangleF(0, 0, pageRect.Width, pageRect.Height), alignment);
+            if (e.PageSettings.Landscape)
+            {
+                // align the image
+                printRect = ScaleHelper.GetAlignedRectangle(printRect, new RectangleF(0, 0, pageRect.Height, pageRect.Width), alignment);
+            }
+            else
+            {
+                // align the image
+                printRect = ScaleHelper.GetAlignedRectangle(printRect, new RectangleF(0, 0, pageRect.Width, pageRect.Height), alignment);
+            }
             e.Graphics.DrawImage(image, printRect, imageRect, GraphicsUnit.Pixel);
         }
     }
